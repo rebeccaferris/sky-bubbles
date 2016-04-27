@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>ThreeJS Bubble</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+    <!-- html5.js for IE less than 9 -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- css3-mediaqueries.js for IE less than 9 -->
+    <!--[if lt IE 9]>
+      <script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
+    <![endif]-->
+
+    <link rel="shortcut icon" href="images/threejsFavicon.ico" type="image/x-icon">
+    <link rel="icon" href="images/threejsFavicon.ico" type="image/x-icon">
+
+    <!-- for Google -->
+  	<meta name="description" content="Rebecca Ferris is a front end developer and designer in the Greater Toronto Area" />
+  	<meta name="keywords" content="front end developer, graphic designer, ux/ui designer, css, html, responsive, web design" />
+  	<meta name="author" content="Rebecca Ferris" />
+  	<meta name="copyright" content="2016"/>
+  	<link rel="author" href="https://plus.google.com/107055804190880851114" />
+
+  	<!-- for Facebook -->
+  	<meta property="og:title" content="Rebecca Ferris Portfolio" />
+  	<meta property="og:type" content="website, portfolio" />
+  	<meta property="og:image" content="http://rebeccaferris.ca/images/og-facebook.png" />  <!-- 1200 x 630 -->
+  	<meta property="og:url" content="http://rebeccaferris.ca/" />
+  	<meta property="og:description" content="Rebecca Ferris is a front end developer and designer in the Greater Toronto Area" />
+
+  	<!-- for Twitter -->
+  	<meta name="twitter:card" content="summary" />
+  	<meta name="twitter:title" content="Rebecca Ferris Responsive Resume" />
+  	<meta name="twitter:description" content="Rebecca Ferris is a front end developer and designer in the Greater Toronto Area" />
+  	<meta name="twitter:image" content="http://rebeccaferris.ca/images/og-twitter.png"/> <!-- 1,024 x 512 -->
+</head>
+<body>
+
+<script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r73/three.min.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/TrackballControls.js"></script>
+<script src="js/KeyboardState.js"></script>
+<script src="js/THREEx.FullScreen.js"></script>
+<script src="js/THREEx.WindowResize.js"></script>
+
+<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+<script>
+
+var container, scene, camera, renderer, controls;
+var geometry, group;
+var skyBox;
+
+var mouseX = 0, mouseY = 0;
+var windowX = window.innerWidth / 2;
+var windowY = window.innerHeight / 2;
+	var size = 100000;
+
+var keyboard = new KeyboardState();
+var clock = new THREE.Clock();
+
+document.addEventListener( 'mousemove', mouseMove, false );
+
+init();
+animate();
+
+function init() {
+  container = document.createElement( 'div' );
+  document.body.appendChild( container );
+
+  // SCENE
+  scene = new THREE.Scene();
+  //scene.fog = new THREE.Fog( 0xffffff, 1, 10000 );
+
+  //CAMERA
+  var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+  var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = size*2;
+  camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+  // camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10000);
+  scene.add(camera);
+  camera.position.set(0,100,400);
+  // camera.position.y = 3200;
+  // camera.position.x = 0;
+  // 	camera.position.z = 3200;
+  camera.lookAt(scene.position);
+
+  // RENDERER
+  if (Detector.webgl)
+    renderer = new THREE.WebGLRenderer({antialias:true});
+  else
+    renderer = new THREE.CanvasRenderer();
+    renderer.setClearColor( 0xffffff ); //pick color!!!!!
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container = document.getElementById('ThreeJS');
+    container.appendChild(renderer.domElement);
+
+    // CONTROLS
+    controls = new THREE.TrackballControls(camera, renderer.domElement);
+    controls.zoomSpeed = 0.1;
+
+    //LIGHT
+    var light = new THREE.HemisphereLight( "0xffffbb", 0x080820, 2 ); //last number is intensity!
+    light.position.x = 200;
+    light.position.y = 200;
+    // light.position.z = 80;
+    scene.add(light);
+
+  	// SKYBOX
+  	var boxArray = [];
+  	var skyTexture = new THREE.ImageUtils.loadTexture('images/cloud.jpg');
+  	boxArray.push( new THREE.MeshBasicMaterial( {map: skyTexture, side: THREE.BackSide } ) );
+  	boxArray.push( new THREE.MeshBasicMaterial( {map: skyTexture, side: THREE.BackSide } ) );
+  	boxArray.push( new THREE.MeshBasicMaterial( {map: skyTexture, side: THREE.BackSide } ) );
+  	boxArray.push( new THREE.MeshBasicMaterial( {map: skyTexture, side: THREE.BackSide } ) );
+  	boxArray.push( new THREE.MeshBasicMaterial( {map: skyTexture, side: THREE.BackSide } ) );
+    boxArray.push( new THREE.MeshBasicMaterial( {map: skyTexture, side: THREE.BackSide } ) );
+  	var boxMaterials = new THREE.MeshFaceMaterial(boxArray);
+  	var skyBoxGeometry = new THREE.CubeGeometry(size, size/2, size);
+  	skyBox = new THREE.Mesh(skyBoxGeometry, boxMaterials);
+  	scene.add(skyBox);
+
+    //SHAPES
+    var loader = new THREE.TextureLoader();
+    var bubbleTexture = loader.load('images/bubble.png');
+    var geometry = new THREE.SphereGeometry( 30, 32, 16 );
+    group = new THREE.Group();
+    for ( var i = 0; i < 500; i ++ ) {
+        var mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ map:bubbleTexture}));
+        mesh.position.y = Math.random() * 2000 - 1000;
+        mesh.position.x = Math.random() * 2000 - 1000;
+      	mesh.position.z = Math.random() * 2000 - 1000;
+
+//color: Math.random() * 0xffffff
+// mesh.position.x = Math.random() * 10000 - 5000;
+// 					mesh.position.y = Math.random() * 10000 - 5000;
+// 					mesh.position.z = Math.random() * 10000 - 5000;
+
+        group.add( mesh );
+      }
+      scene.add( group );
+} //end of function int()
+
+
+function mouseMove(event) {
+    mouseX = ( event.clientX - windowX ) * 20 - 1;
+    mouseY = ( event.clientY - windowY ) * 20 + 1;
+}//end of function mouseMove()
+
+
+function animate() {
+
+  requestAnimationFrame(animate);
+  keyboard.update();
+  if (keyboard.pressed("z")) {
+
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+  spin();
+
+} //end of function animate()
+
+
+function spin() {
+    var timer = Date.now() * 0.001;
+    var rotationX = Math.sin( timer * 0.5 ),
+    rotationY = Math.sin( timer * 0.5 ),
+    rotationZ = Math.sin( timer * 0.1 );
+
+    camera.position.x += ( mouseX - camera.position.x ) * .05;
+    camera.position.y += ( - mouseY - camera.position.y ) * .05;
+    camera.lookAt( scene.position );
+
+    group.rotation.x = rotationX;
+    group.rotation.y = rotationY;
+    group.rotation.z = rotationZ;
+
+    renderer.render( scene, camera );
+
+}//end of function spin()
+
+</script>
+</body>
+</html>
